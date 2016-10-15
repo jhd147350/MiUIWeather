@@ -6,11 +6,28 @@ import android.os.Bundle;
 
 public class MainActivity extends AppCompatActivity {
 
+    private dynamicBgView bg;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        bg= (dynamicBgView) findViewById(R.id.bg);
 
         //SensorManager sensorManager=getSystemService();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        System.out.println("Pause");
+        bg.stopRefresh();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        System.out.println("Resume");
+        bg.reStartRefresh();
     }
 }
