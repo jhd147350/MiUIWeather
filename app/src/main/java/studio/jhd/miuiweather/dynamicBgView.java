@@ -29,9 +29,11 @@ public class dynamicBgView extends View implements SensorEventListener {
 
     private Paint mPaint = new Paint();
 
+    //动画是否正在运行
     private boolean isRunning = false;
-    //10
+    //10张绘制所需的图片
     private Bitmap bitmaps[] = new Bitmap[10];
+    //10张图的id
     private int IDs[] = {R.drawable.bg_cloudy_left,
             R.drawable.bg_cloudy_right,
             R.drawable.bg_cloudy_windmill_first_rod,//风车只绘制了一个，其他风车只是位置不同，转速不同
@@ -43,21 +45,29 @@ public class dynamicBgView extends View implements SensorEventListener {
             R.drawable.bg_cloudy_windmill_fourth_rod,
             R.drawable.bg_cloudy_windmill_fourth_head,
     };
+    //每张图的宽和高
     private int widths[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     private int heights[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    //每张图的绘制位置
     private float positionXs[] = new float[10];
     private float positionYs[] = new float[10];
+    //自定义view的宽和高
     private int viewWidth = 0;
     private int viewHeight = 0;
 
+    //风车的旋转角度
     private float rotateD = 0;
 
+    //随重力变换时，背景左右上下的平移量
     private float translateX = 0;
     private float translateY = 0;
+    //最大平移距离，最终的平移距离 按最大平移距离的百分比计算
     private float translateDistance = 0;
 
     private SensorManager sensorManager;
     private Sensor gyroSensor;
+
+    //属性动画
     private ValueAnimator animator;
 
     public dynamicBgView(Context context) {
@@ -78,6 +88,7 @@ public class dynamicBgView extends View implements SensorEventListener {
         init();
     }
 
+    //需要初始化的参数
     private void init() {
 
         for (int i = 0; i < 10; i++) {//初始化 云 的图片资源，并获取宽高
@@ -86,6 +97,9 @@ public class dynamicBgView extends View implements SensorEventListener {
             heights[i] = bitmaps[i].getHeight();
         }
         mPaint = new Paint();
+
+        //解决编辑器下不能预览问题
+        if (isInEditMode()) { return; }
 
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         gyroSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
@@ -105,6 +119,7 @@ public class dynamicBgView extends View implements SensorEventListener {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        System.out.println("-----------"+getResources().getDisplayMetrics().density);
         System.out.println("绘制");
         canvas.save();
         //左边的图和右边的图 上下移动的距离是相反的
@@ -140,17 +155,18 @@ public class dynamicBgView extends View implements SensorEventListener {
     private void calculateXYs() {
         //前2张是山，需要居中显示
         positionXs[0] = -(widths[0] - viewWidth) / 2;
-        positionYs[0] = viewWidth - heights[0] - 100;
+        positionYs[0] = viewWidth - heights[0] - dp2px(100/3);
         positionXs[1] = -(widths[1] - viewWidth) / 2;
         positionYs[1] = viewHeight - heights[1];
 
         //后面都是风车，位置自己决定 只写了一个风车的位置
-        positionXs[2] = widths[3] / 2 - 13 + viewWidth - 400;
-        positionYs[2] = widths[3] / 2 + 6 + viewHeight - 700;
-        positionXs[3] = viewWidth - 400;
-        positionYs[3] = viewHeight - 700;
+        positionXs[2] = widths[3] / 2 - dp2px(13/3) + viewWidth - dp2px(400/3);
+        positionYs[2] = widths[3] / 2 + dp2px(6/3) + viewHeight - dp2px(700/3);
+        positionXs[3] = viewWidth - dp2px(400/3);
+        positionYs[3] = viewHeight - dp2px(700/3);
     }
 
+    //开始动画
     private void startAni(int duration) {
 
         PropertyValuesHolder holder = PropertyValuesHolder.ofFloat("name", 0f, 360f);
@@ -186,12 +202,14 @@ public class dynamicBgView extends View implements SensorEventListener {
         if (event.sensor.getType() == Sensor.TYPE_ORIENTATION) {
 
             System.out.println();
-            int de = (int) event.values[0];
+            //int de = (int) event.values[0];
             float y = event.values[1];
             float x = event.values[2];
 
+            //x的范围从90到-90
             translateX = -x / 90 * translateDistance;
 
+            //y的范围从180到-180
             translateY = -y / 180 * translateDistance / 2;
         }
     }
@@ -227,11 +245,13 @@ public class dynamicBgView extends View implements SensorEventListener {
 
     //dp转像素
     public float dp2px(float dpValue) {
+
         return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dpValue, getResources().getDisplayMetrics());
+
     }
 
-    public float sp2px(float spValue) {
+   /* public float sp2px(float spValue) {
         return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, spValue, getResources().getDisplayMetrics());
-    }
+    }*/
 
 }
