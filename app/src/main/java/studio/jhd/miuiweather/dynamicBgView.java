@@ -11,8 +11,8 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.provider.Settings;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.View;
 import android.view.animation.LinearInterpolator;
 
@@ -30,12 +30,11 @@ public class dynamicBgView extends View implements SensorEventListener {
     private Paint mPaint = new Paint();
 
     private boolean isRunning = false;
-
     //10
     private Bitmap bitmaps[] = new Bitmap[10];
     private int IDs[] = {R.drawable.bg_cloudy_left,
             R.drawable.bg_cloudy_right,
-            R.drawable.bg_cloudy_windmill_first_rod,
+            R.drawable.bg_cloudy_windmill_first_rod,//风车只绘制了一个，其他风车只是位置不同，转速不同
             R.drawable.bg_cloudy_windmill_first_head,
             R.drawable.bg_cloudy_windmill_second_rod,
             R.drawable.bg_cloudy_windmill_second_head,
@@ -56,7 +55,6 @@ public class dynamicBgView extends View implements SensorEventListener {
     private float translateX = 0;
     private float translateY = 0;
     private float translateDistance = 0;
-
 
     private SensorManager sensorManager;
     private Sensor gyroSensor;
@@ -87,7 +85,6 @@ public class dynamicBgView extends View implements SensorEventListener {
             widths[i] = bitmaps[i].getWidth();
             heights[i] = bitmaps[i].getHeight();
         }
-        // bitmap_cloud = BitmapFactory.decodeResource(getResources(), cloudsID[0]);
         mPaint = new Paint();
 
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
@@ -102,20 +99,22 @@ public class dynamicBgView extends View implements SensorEventListener {
         viewHeight = MeasureSpec.getSize(heightMeasureSpec);
         setMeasuredDimension(viewWidth, viewHeight);
         translateDistance = widths[0] - viewWidth;
-        //计算绘制位置
         calculateXYs();
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
         System.out.println("绘制");
-
+        canvas.save();
+        //左边的图和右边的图 上下移动的距离是相反的
+        canvas.translate(translateX, -translateY + translateDistance / 2);
+        canvas.drawBitmap(bitmaps[0], positionXs[0], positionYs[0], mPaint);
+        canvas.restore();
         canvas.save();
         canvas.translate(translateX, translateY + translateDistance / 2);
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 1; i < 4; i++) {
 
             if (i != 3) {
                 canvas.drawBitmap(bitmaps[i], positionXs[i], positionYs[i], mPaint);
@@ -134,8 +133,6 @@ public class dynamicBgView extends View implements SensorEventListener {
             //设置每一个动画的持续时间都不同
             startAni(3000);
         }
-
-        // System.out.println("***" + widths[0] + "***" + viewWidth);
 
     }
 
@@ -187,9 +184,7 @@ public class dynamicBgView extends View implements SensorEventListener {
         }
 
         if (event.sensor.getType() == Sensor.TYPE_ORIENTATION) {
-           /* for(float a:event.values){
-                System.out.print(" "+a+" ");
-            }*/
+
             System.out.println();
             int de = (int) event.values[0];
             float y = event.values[1];
@@ -198,34 +193,6 @@ public class dynamicBgView extends View implements SensorEventListener {
             translateX = -x / 90 * translateDistance;
 
             translateY = -y / 180 * translateDistance / 2;
-
-
-            //  System.out.println("x:"+x+"  y:"+y+"  z:"+z);
-            // mCalendar = Calendar.getInstance();
-            //long stamp = mCalendar.getTimeInMillis() / 1000l;// 1393844912
-
-            // textviewX.setText(String.valueOf(x));
-            ///  textviewY.setText(String.valueOf(y));
-            //  textviewZ.setText(String.valueOf(z));
-
-            //int second = mCalendar.get(Calendar.SECOND);// 53
-
-            //int px = Math.abs(mX - x);
-            //int py = Math.abs(mY - y);
-            //int pz = Math.abs(mZ - z);
-            // Log.d(TAG, "pX:" + px + "  pY:" + py + "  pZ:" + pz + "    stamp:"
-            //         + stamp + "  second:" + second);
-            /*int maxvalue = getMaxValue(px, py, pz);
-            if (maxvalue > 2 && (stamp - lasttimestamp) > 30) {
-                lasttimestamp = stamp;
-                Log.d(TAG, " sensor isMoveorchanged....");
-                textviewF.setText("检测手机在移动..");
-            }
-
-            mX = x;
-            mY = y;
-            mZ = z;*/
-
         }
     }
 
@@ -237,6 +204,7 @@ public class dynamicBgView extends View implements SensorEventListener {
 
     //暂停动画和传感器
     public void stopRefresh() {
+        //需在activity 的 onPause中调用
         if (animator != null) {
             animator.cancel();
         }
@@ -244,19 +212,26 @@ public class dynamicBgView extends View implements SensorEventListener {
             sensorManager.unregisterListener(this);
         }
 
-
     }
 
     //再次开启动画和传感器
     public void reStartRefresh() {
+        //需在activity 的 onResume中调用
         if (animator != null) {
             animator.start();
         }
         if (sensorManager != null) {
             sensorManager.registerListener(this, gyroSensor, SensorManager.SENSOR_DELAY_GAME);
         }
+    }
 
+    //dp转像素
+    public float dp2px(float dpValue) {
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dpValue, getResources().getDisplayMetrics());
+    }
 
+    public float sp2px(float spValue) {
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, spValue, getResources().getDisplayMetrics());
     }
 
 }

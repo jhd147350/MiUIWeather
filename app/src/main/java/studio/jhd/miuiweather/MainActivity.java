@@ -21,6 +21,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         System.out.println("Pause");
+        //关掉动画和注销传感器监听，节省电量
         bg.stopRefresh();
     }
 
