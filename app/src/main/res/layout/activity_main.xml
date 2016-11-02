@@ -21,6 +21,10 @@
             android:id="@+id/bg"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
+        <studio.jhd.miuiweather.dynamicRainView
+            android:id="@+id/rain"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
     </FrameLayout>
 
