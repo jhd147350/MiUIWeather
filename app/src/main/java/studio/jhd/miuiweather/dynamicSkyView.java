@@ -8,7 +8,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.util.AttributeSet;
-import android.view.View;
 import android.view.animation.LinearInterpolator;
 
 /**
@@ -18,7 +17,7 @@ import android.view.animation.LinearInterpolator;
  * 仿miui8天气 循环飘动的云
  */
 
-public class dynamicSkyView extends View {
+public class dynamicSkyView extends BaseView {
    // Context mContext;
     private Bitmap bitmap_clouds[] = new Bitmap[4];
    // private Bitmap bitmap_cloud;
@@ -33,39 +32,33 @@ public class dynamicSkyView extends View {
     private PropertyValuesHolder holders[] = new PropertyValuesHolder[4];
     private String names[] = {"name1", "name2", "name3", "name4"};
     private Paint mPaint;
-    //private ValueAnimator translateSkyAni;
-
     private int viewWidth = 0;
     private int viewHeight = 0;
     private boolean isRunning = false;
 
-
     public dynamicSkyView(Context context) {
         super(context);
-        init(context);
+        init();
     }
 
     public dynamicSkyView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init(context);
+        init();
     }
 
     public dynamicSkyView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init(context);
+        init();
     }
 
-    private void init(Context context) {
-       // mContext = context;
+    private void init() {
 
         for (int i = 0; i < 4; i++) {//初始化 云 的图片资源，并获取宽高
             bitmap_clouds[i] = BitmapFactory.decodeResource(getResources(), cloudsID[i]);
             cloud_widths[i] = bitmap_clouds[i].getWidth();
             cloud_heights[i] = bitmap_clouds[i].getHeight();
-            System.out.println(":" + cloud_widths[i]);
         }
        // bitmap_cloud = BitmapFactory.decodeResource(getResources(), cloudsID[0]);
-
         mPaint = new Paint();
     }
 
@@ -91,17 +84,16 @@ public class dynamicSkyView extends View {
             });
             animators[i].reverse();
         }
-
         isRunning = true;
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.drawBitmap(bitmap_clouds[0], canvasTranslateXs[0], viewHeight - cloud_heights[0] - 300, mPaint);
-        canvas.drawBitmap(bitmap_clouds[1], canvasTranslateXs[1], viewHeight - cloud_heights[1] - 550, mPaint);
-        canvas.drawBitmap(bitmap_clouds[2], canvasTranslateXs[2], viewHeight - cloud_heights[2] - 700, mPaint);
-        canvas.drawBitmap(bitmap_clouds[3], canvasTranslateXs[3], viewHeight - cloud_heights[3] - 800, mPaint);
+        canvas.drawBitmap(bitmap_clouds[0], canvasTranslateXs[0], viewHeight - cloud_heights[0] - dp2px(100), mPaint);
+        canvas.drawBitmap(bitmap_clouds[1], canvasTranslateXs[1], viewHeight - cloud_heights[1] - dp2px(550/3), mPaint);
+        canvas.drawBitmap(bitmap_clouds[2], canvasTranslateXs[2], viewHeight - cloud_heights[2] - dp2px(700/3), mPaint);
+        canvas.drawBitmap(bitmap_clouds[3], canvasTranslateXs[3], viewHeight - cloud_heights[3] - dp2px(800/3), mPaint);
         // canvas.drawColor(0xffff0000);
         //因为屏幕宽度 只有在测量之后才能正确拿到，所以将动画启动放在这里
         if (!isRunning) {
@@ -117,6 +109,5 @@ public class dynamicSkyView extends View {
         viewWidth = MeasureSpec.getSize(widthMeasureSpec);
         viewHeight = MeasureSpec.getSize(heightMeasureSpec);
         setMeasuredDimension(viewWidth, viewHeight);
-
     }
 }

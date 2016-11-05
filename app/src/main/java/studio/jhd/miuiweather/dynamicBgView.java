@@ -23,7 +23,7 @@ import android.view.animation.LinearInterpolator;
  * 动态的背景(山和风车)，可以随重力左右滚动一小段距离
  */
 
-public class dynamicBgView extends View implements SensorEventListener {
+public class dynamicBgView extends BaseView implements SensorEventListener {
 
     private Context context;
 
@@ -119,8 +119,6 @@ public class dynamicBgView extends View implements SensorEventListener {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        System.out.println("-----------"+getResources().getDisplayMetrics().density);
-        System.out.println("绘制");
         canvas.save();
         //左边的图和右边的图 上下移动的距离是相反的
         canvas.translate(translateX, -translateY + translateDistance / 2);
@@ -182,7 +180,6 @@ public class dynamicBgView extends View implements SensorEventListener {
             public void onAnimationUpdate(ValueAnimator animation) {
                 rotateD = (float) animation.getAnimatedValue("name");
 
-                System.out.println("动画");
                 invalidate();
             }
         });
@@ -193,15 +190,12 @@ public class dynamicBgView extends View implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        System.out.println("onSensorChanged");
         if (event.sensor == null) {
-            System.out.println("null");
             return;
         }
 
         if (event.sensor.getType() == Sensor.TYPE_ORIENTATION) {
 
-            System.out.println();
             //int de = (int) event.values[0];
             float y = event.values[1];
             float x = event.values[2];
@@ -216,7 +210,6 @@ public class dynamicBgView extends View implements SensorEventListener {
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        System.out.println("onAccuracyChanged");
 
     }
 
@@ -243,15 +236,6 @@ public class dynamicBgView extends View implements SensorEventListener {
         }
     }
 
-    //dp转像素
-    public float dp2px(float dpValue) {
 
-        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dpValue, getResources().getDisplayMetrics());
-
-    }
-
-   /* public float sp2px(float spValue) {
-        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, spValue, getResources().getDisplayMetrics());
-    }*/
 
 }

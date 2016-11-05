@@ -5,11 +5,13 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
-import android.util.TypedValue;
-import android.view.View;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -21,8 +23,7 @@ import java.util.List;
  * https://github.com/jhd147350
  */
 
-public class dynamicRainView extends View {
-
+public class dynamicRainView extends BaseView implements SensorEventListener {
     //自定义view的宽和高
     private int viewWidth;
     private int viewHeight;
@@ -31,25 +32,14 @@ public class dynamicRainView extends View {
 
     private Paint mPaint = new Paint();
 
-    //雨滴数量
-    private static final int numOfRaindrop = 50;
-
-    private RainDrop drops[] = new RainDrop[numOfRaindrop];
-
     private List<RainDrop> rainDropList = new ArrayList<>();
+
+    //雨滴随重力倾斜角度
+    private float rotateDegree = 0;
 
 
     //雨滴应该是视觉上越远的，看起来越小，越半透明
     //随机产生长短、粗细、透明度不同的雨滴，表示远近 近的雨滴下落速度也快
-
-    //雨滴粗细范围
-    private float rangeOfRaindropThick[] = {0, 0};
-
-    //雨滴长短范围
-    private float rangeOfRaindropLength[] = {0, 0};
-
-    //动画是否正在运行
-    private boolean isRunning = false;
 
     private Handler handler = new Handler() {
         @Override
@@ -68,7 +58,6 @@ public class dynamicRainView extends View {
             这种执行会抛异常java.util.ConcurrentModificationException
             for (RainDrop temp : rainDropList) {//如果动画播放完成，就移除该对象
                 if (temp.isFinished) {
-                    System.out.println("23333333333");
                     rainDropList.remove(temp);
                 }
             }*/
@@ -98,16 +87,24 @@ public class dynamicRainView extends View {
         mPaint = new Paint();
         mPaint.setColor(0xff000000);
         mPaint.setAntiAlias(true);
+
+        //解决编辑器下不能预览问题
+        if (isInEditMode()) {
+            return;
+        }
+        //传感器相关
+        SensorManager sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
+        Sensor gyroSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
+        sensorManager.registerListener(this, gyroSensor, SensorManager.SENSOR_DELAY_GAME);
     }
 
     private void needInitOnMeasure() {
         //初始化所有雨滴,里面有用到view的高宽做参数，只能在拿到高宽之后才能初始化
-        for (int i = 0; i < numOfRaindrop; i++) {
+      /*  for (int i = 0; i < numOfRaindrop; i++) {
             drops[i] = new RainDrop();
         }
-
+*/
         createRainDrops();
-
     }
 
     @Override
@@ -118,12 +115,14 @@ public class dynamicRainView extends View {
             //drops[i]=new RainDrop();
 
         }*/
+        canvas.translate(viewWidth / 2, 0);
+        canvas.rotate(rotateDegree);
         for (RainDrop temp : rainDropList) {
             mPaint.setStrokeWidth(temp.thickness);
             canvas.drawLine(temp.x, temp.y, temp.x, temp.y + temp.length, mPaint);
         }
         //保证60帧
-        postInvalidateDelayed(16);
+        postInvalidate();
     }
 
     private void createRainDrops() {
@@ -131,21 +130,16 @@ public class dynamicRainView extends View {
             @Override
             public void run() {
                 super.run();
-                long sleepRandomTime = 1000;
+                long sleepRandomTime;
                 while (true) {
-
-                    //擦，子线程不能运行animator，要写handler
-
-                    sleepRandomTime = (long) (200 * Math.random()) ;
+                    sleepRandomTime = (long) (200 * Math.random());
                     try {
                         sleep(sleepRandomTime);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
-                        System.out.println("Err in createRainDrops");
                     }
+                    //子线程不能运行animator，要在handler中处理
                     handler.sendEmptyMessage(0);//去主线程操作
-
-
                 }
             }
         };
@@ -162,25 +156,48 @@ public class dynamicRainView extends View {
         needInitOnMeasure();
     }
 
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor == null) {
+            return;
+        }
+
+        if (event.sensor.getType() == Sensor.TYPE_ORIENTATION) {
+
+            //int de = (int) event.values[0];
+            //float y = event.values[1];
+            float x = event.values[2];
+
+            //x的范围从90到-90
+            rotateDegree = x / 90 * 40;
+
+            //y的范围从180到-180
+            //translateY = -y / 180 * 40;
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
+
     //雨滴类，需要随机产生
     private class RainDrop {
         //位置
-        public float x, y;
-        public float initx, inity;
+        float x, y;
+        float initx, inity;
         float length;
         float thickness;
-        static final int SPEED = 2;
         private boolean isFinished = false;
 
         //
         RainDrop() {
             createRandomData();
-            System.out.println(toString());
             startAnim();
         }
 
-        public void startAnim() {
-            ValueAnimator animator = new ValueAnimator();
+        private void startAnim() {
+            ValueAnimator animator;
             animator = ValueAnimator.ofFloat(0.0f, viewHeight);
             animator.setDuration(1500);
             //float temp=0;
@@ -215,18 +232,20 @@ public class dynamicRainView extends View {
             //延迟200ms播放
             //animator.setStartDelay(200);
             animator.setInterpolator(null);
-
             animator.start();
         }
 
         private void createRandomData() {
             x = (float) Math.random() * viewWidth;
+            x = x - viewWidth / 2;
             // y = (float) Math.random() * (viewHeight / 2);
             y = 0;
             initx = x;
             inity = y;
             float temp = (float) Math.random();
+            //长度3-9
             length = temp * dp2px(6) + dp2px(3);
+            //厚度0.5-1.25
             thickness = temp * dp2px(0.75f) + dp2px(0.5f);
         }
 
@@ -239,13 +258,5 @@ public class dynamicRainView extends View {
                     ", thickness=" + thickness +
                     '}';
         }
-    }
-
-
-    //dp转像素
-    public float dp2px(float dpValue) {
-
-        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dpValue, getResources().getDisplayMetrics());
-
     }
 }
