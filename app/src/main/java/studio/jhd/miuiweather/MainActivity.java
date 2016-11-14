@@ -1,20 +1,34 @@
 package studio.jhd.miuiweather;
 
-import android.hardware.SensorManager;
+import android.graphics.drawable.AnimationDrawable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
 
     private dynamicBgView bg;
+    private ImageView imageView;
+    private FrameLayout frameLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         bg= (dynamicBgView) findViewById(R.id.bg);
+        imageView = (ImageView) findViewById(R.id.image01);
+        //开启帧动画
+        AnimationDrawable animationDrawable = (AnimationDrawable) imageView.getDrawable();
+        animationDrawable.start();
 
-        //SensorManager sensorManager=getSystemService();
+        // TODO: 2016/11/14
+        frameLayout = (FrameLayout) findViewById(R.id.my_frame);
+        frameLayout.addView(new dynamicRainView(this));
+        Log.d(TAG, "main: ");
+        android.util.Log.d(TAG, "onCreate: ");
     }
 
     @Override
